@@ -98,6 +98,8 @@
             "/apisite/games/v1/games/list?sortToken=recent&maxRows=6&genre=0&keyword="
         );
 
+        console.log("RAW FAVORITES DATA:", data);
+
         const games =
             data.games ||
             (data.data && data.data.games) ||
