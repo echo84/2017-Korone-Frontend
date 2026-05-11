@@ -316,9 +316,15 @@
                                                 <div class="segment seg-4"></div>
                                             </div>
                                         </div>
-                                        <div class="vote-numbers">
-                                            <span id="vote-up-text" class="vote-text">0</span>
-                                            <span id="vote-down-text" class="vote-text">0</span>
+                                            <div class="vote-numbers">
+                                                <div class="count-left">
+                                                    <span id="vote-up-text" class="vote-text">${esc(up)}</span>
+                                                </div>
+
+                                                <div class="count-right">
+                                                    <span id="vote-down-text" class="vote-text">${esc(down)}</span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     <div class="downvote"><span class="icon-dislike"></span></div>
