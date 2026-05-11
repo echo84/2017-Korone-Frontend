@@ -160,35 +160,6 @@
             "</ul>";
     }
 
-    async function getUniverseId(placeId) {
-        const data = await apiJson(
-            "/universes/get-universe-containing-place?placeid=" + encodeURIComponent(placeId)
-        );
-
-        return data.UniverseId || data.universeId || null;
-    }
-
-    async function getGameVotes(placeId) {
-        const universeId = await getUniverseId(placeId);
-        if (!universeId) return { upVotes: 0, downVotes: 0, percent: 0 };
-
-        const data = await apiJson(
-            "/apisite/games/v1/games/votes?universeIds=" + encodeURIComponent(universeId)
-        );
-
-        const vote = Array.isArray(data) ? data[0] : (data.data && data.data[0]) || data;
-
-        const upVotes = vote.upVotes || vote.totalUpVotes || 0;
-        const downVotes = vote.downVotes || vote.totalDownVotes || 0;
-        const total = upVotes + downVotes;
-
-        return {
-            upVotes,
-            downVotes,
-            percent: total > 0 ? Math.round((upVotes / total) * 100) : 0
-        };
-    }
-
     function rebuildGamePage() {
         const old = qs('[class*="gameContainer-"]');
         if (!old || document.getElementById("game-detail-page")) return false;
@@ -308,7 +279,7 @@
                                     <div class="vote-details">
                                         <div class="vote-container">
                                             <div class="vote-background"></div>
-                                            <div class="vote-percentage" id="game-vote-percentage" style="width:0%"></div>
+                                            <div class="vote-percentage" style="width:${esc(voteWidth)}"></div>
                                             <div class="vote-mask">
                                                 <div class="segment seg-1"></div>
                                                 <div class="segment seg-2"></div>
@@ -317,8 +288,8 @@
                                             </div>
                                         </div>
                                         <div class="vote-numbers">
-                                            <span id="vote-up-text" class="vote-text">0</span></div>
-                                            <span id="vote-down-text" class="vote-text">0</span></div>
+                                            <div class="count-left"><span id="vote-up-text" class="vote-text">${esc(up)}</span></div>
+                                            <div class="count-right"><span id="vote-down-text" class="vote-text">${esc(down)}</span></div>
                                         </div>
                                     </div>
                                     <div class="downvote"><span class="icon-dislike"></span></div>
@@ -420,16 +391,6 @@
                 showCarouselItem(carouselIndex + 1);
             });
         }
-
-        getGameVotes(placeId).then(function (votes) {
-            const upEl = document.getElementById("vote-up-text");
-            const downEl = document.getElementById("vote-down-text");
-            const percentEl = document.getElementById("game-vote-percentage");
-
-            if (upEl) upEl.textContent = votes.upVotes.toLocaleString();
-            if (downEl) downEl.textContent = votes.downVotes.toLocaleString();
-            if (percentEl) percentEl.style.width = votes.percent + "%";
-        });
 
         loadRecommendedGames(placeId);
 
