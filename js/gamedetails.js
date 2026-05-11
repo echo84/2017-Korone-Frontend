@@ -170,8 +170,18 @@
         const creator = text('[class*="creatorName-"]', old) || "Unknown";
         const creatorHref = (qs('[class*="creatorName-"]', old) || {}).href || "#";
 
-        const thumb = qs('[class*="carouselItem-"] img, [class*="thumbContainer-"] img', old);
-        const thumbUrl = thumb ? thumb.src : "/img/placeholder/icon_one.png";
+        const thumbImgs = Array.prototype.slice.call(
+            old.querySelectorAll('[class*="carouselItem-"] img')
+        ).map(img => img.src).filter(Boolean);
+
+        if (!thumbImgs.length) {
+            const fallbackThumb = qs('[class*="thumbContainer-"] img', old);
+            if (fallbackThumb) thumbImgs.push(fallbackThumb.src);
+        }
+
+        if (!thumbImgs.length) {
+            thumbImgs.push("/img/placeholder/icon_one.png");
+        }
 
         const desc = text('[class*="descriptionText-"]', old);
         const stats = Array.prototype.slice.call(old.querySelectorAll('[class*="gameStat-"]')).map(function (li) {
@@ -183,10 +193,23 @@
             return x.label && x.value;
         });
 
-        const up = text('[class*="countLeft-"] [class*="voteText-"]', old) || "0";
-        const down = text('[class*="countRight-"] [class*="voteText-"]', old) || "0";
-        const votePercentEl = qs('[class*="votePercentage-"]', old);
-        const voteWidth = votePercentEl && votePercentEl.style.width ? votePercentEl.style.width : "0%";
+        const up =
+            text('[class*="countLeft-"]', old) ||
+            text('[class*="upvote"] [class*="voteText-"]', old) ||
+            "0";
+
+        const down =
+            text('[class*="countRight-"]', old) ||
+            text('[class*="downvote"] [class*="voteText-"]', old) ||
+            "0";
+
+        const votePercentEl =
+            qs('[class*="votePercentage-"]', old) ||
+            qs('[class*="vote-percentage"]', old);
+
+        const voteWidth = votePercentEl && votePercentEl.style.width
+            ? votePercentEl.style.width
+            : "0%";
 
         const badges = qs('[class*="badgeList-"]', old);
         const recommended = qs('[class*="recommendedGamesContainer-"]', old);
@@ -202,10 +225,23 @@
         <div class="game-thumb-container">
             <div id="carousel-game-details" class="carousel slide">
                 <div class="carousel-inner" role="listbox">
-                    <div class="item active">
-                        <span><img class="carousel-thumb" src="${esc(thumbUrl)}"></span>
-                    </div>
+                    ${thumbImgs.map(function (url, i) {
+                        return `
+                            <div class="item ${i === 0 ? "active" : ""}">
+                                <span><img class="carousel-thumb" src="${esc(url)}"></span>
+                            </div>
+                        `;
+                    }).join("")}
                 </div>
+
+                ${thumbImgs.length > 1 ? `
+                    <a class="left carousel-control" id="game-carousel-left" href="#">
+                        <span class="icon-carousel-left"></span>
+                    </a>
+                    <a class="right carousel-control" id="game-carousel-right" href="#">
+                        <span class="icon-carousel-right"></span>
+                    </a>
+                ` : ""}
             </div>
         </div>
 
@@ -324,6 +360,35 @@
         if (play) {
             play.addEventListener("click", function () {
                 playGame(placeId);
+            });
+        }
+
+        let carouselIndex = 0;
+        const carouselItems = Array.prototype.slice.call(document.querySelectorAll("#carousel-game-details .item"));
+
+        function showCarouselItem(index) {
+            if (!carouselItems.length) return;
+
+            carouselItems.forEach(item => item.classList.remove("active"));
+
+            carouselIndex = (index + carouselItems.length) % carouselItems.length;
+            carouselItems[carouselIndex].classList.add("active");
+        }
+
+        const left = document.getElementById("game-carousel-left");
+        const right = document.getElementById("game-carousel-right");
+
+        if (left) {
+            left.addEventListener("click", function (e) {
+                e.preventDefault();
+                showCarouselItem(carouselIndex - 1);
+            });
+        }
+
+        if (right) {
+            right.addEventListener("click", function (e) {
+                e.preventDefault();
+                showCarouselItem(carouselIndex + 1);
             });
         }
 
