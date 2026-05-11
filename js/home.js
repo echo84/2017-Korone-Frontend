@@ -453,7 +453,7 @@
 
             rebuildHome().then(function () {
                 loadRecentlyPlayed();
-                loadFavorites(userId);
+                loadFavorites();
             });
         }
 
