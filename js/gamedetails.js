@@ -42,6 +42,124 @@
         }, 1000);
     }
 
+    async function apiJson(url) {
+        const res = await fetch(url, { credentials: "include" });
+        if (!res.ok) throw new Error(url + " failed: " + res.status);
+        return res.json();
+    }
+
+    async function getGameIcons(placeIds) {
+        const out = {};
+        placeIds = placeIds.filter(Boolean);
+
+        if (!placeIds.length) return out;
+
+        const json = await apiJson(
+            "/apisite/thumbnails/v1/places/gameicons?placeIds=" +
+            encodeURIComponent(placeIds.join(",")) +
+            "&size=150x150&format=Png"
+        );
+
+        (json.data || []).forEach(item => {
+            out[String(item.targetId)] = item.imageUrl;
+        });
+
+        return out;
+    }
+
+        async function loadRecommendedGames(currentPlaceId) {
+        const container = document.getElementById("my-recommended-games");
+        if (!container) return console.warn("missing recommended games container");
+
+        const data = await apiJson(
+            "/apisite/games/v1/games/list?sortToken=popular&maxRows=8&genre=0&keyword="
+        );
+
+        let games =
+            data.games ||
+            (data.data && data.data.games) ||
+            data.GameData ||
+            data.Items ||
+            [];
+
+        games = games.filter(function (g) {
+            const pid = String(g.placeId || g.rootPlaceId || (g.rootPlace && g.rootPlace.id) || "");
+            return pid !== String(currentPlaceId);
+        }).slice(0, 7);
+
+        const placeIds = games.map(g => g.placeId || g.rootPlaceId || (g.rootPlace && g.rootPlace.id));
+        const thumbs = await getGameIcons(placeIds);
+
+        container.innerHTML =
+            '<div class="container-header"><h3>Recommended Games</h3></div>' +
+            '<ul class="hlist game-cards game-cards-sm">' +
+            games.map(function (game, index) {
+                const placeId = game.placeId || game.rootPlaceId || (game.rootPlace && game.rootPlace.id) || 0;
+
+                const name = esc(game.name || "Unknown Game");
+                const creator = esc(game.creatorName || (game.creator && game.creator.name) || "Unknown");
+                const creatorId = game.creatorId || (game.creator && game.creator.id) || 0;
+
+                const players = game.playerCount || 0;
+                const upvotes = game.totalUpVotes || game.likes || 0;
+                const downvotes = game.totalDownVotes || game.dislikes || 0;
+
+                const totalVotes = upvotes + downvotes;
+                const votePercent = totalVotes > 0 ? Math.round((upvotes / totalVotes) * 100) : 0;
+
+                const thumb =
+                    thumbs[String(placeId)] ||
+                    game.iconUrl ||
+                    game.imageUrl ||
+                    game.thumbnailUrl ||
+                    "/img/placeholder/icon_one.png";
+
+                return `
+    <li class="list-item game-card">
+        <div class="game-card-container">
+            <a href="/games/refer?RecommendationAlgorithm=2&RecommendationSourceId=${currentPlaceId}&PlaceId=${placeId}&Position=${index + 1}&PageType=GameDetail" class="game-card-link">
+                <div class="game-card-thumb-container">
+                    <img class="game-card-thumb" src="${esc(thumb)}" alt="${name}" thumbnail="" image-retry="">
+                </div>
+
+                <div class="text-overflow game-card-name" title="${name}" ng-non-bindable="">${name}</div>
+                <div class="game-card-name-secondary">${players.toLocaleString()} Playing</div>
+
+                <div class="game-card-vote">
+                    <div class="vote-bar" data-voting-processed="false">
+                        <div class="vote-thumbs-up"><span class="icon-thumbs-up"></span></div>
+
+                        <div class="vote-container" data-upvotes="${upvotes}" data-downvotes="${downvotes}">
+                            <div class="vote-background"></div>
+                            <div class="vote-percentage" style="width:${votePercent}%"></div>
+                            <div class="vote-mask">
+                                <div class="segment seg-1"></div>
+                                <div class="segment seg-2"></div>
+                                <div class="segment seg-3"></div>
+                                <div class="segment seg-4"></div>
+                            </div>
+                        </div>
+
+                        <div class="vote-thumbs-down"><span class="icon-thumbs-down"></span></div>
+                    </div>
+
+                    <div class="vote-counts">
+                        <div class="vote-down-count">${downvotes.toLocaleString()}</div>
+                        <div class="vote-up-count">${upvotes.toLocaleString()}</div>
+                    </div>
+                </div>
+            </a>
+
+            <span class="game-card-footer">
+                <span class="text-label xsmall">By </span>
+                <a class="text-link xsmall text-overflow" href="/users/${creatorId}/profile" ng-non-bindable="">${creator}</a>
+            </span>
+        </div>
+    </li>`;
+            }).join("") +
+            "</ul>";
+    }
+
     function rebuildGamePage() {
         const old = qs('[class*="gameContainer-"]');
         if (!old || document.getElementById("game-detail-page")) return false;
@@ -189,7 +307,10 @@
                 </div>
 
                 ${badges ? badges.outerHTML : ""}
-                ${recommended ? recommended.outerHTML : ""}
+                <div id="my-recommended-games" class="container-list games-detail">
+                    <div class="container-header"><h3>Recommended Games</h3></div>
+                    <div class="game-card-list empty-row">Loading...</div>
+                </div>
                 ${comments ? '<div class="container-list games-detail"><div class="container-header"><h3>Comments</h3></div>' + comments.outerHTML + '</div>' : ""}
             </div>
         </div>
@@ -205,6 +326,8 @@
                 playGame(placeId);
             });
         }
+
+        loadRecommendedGames(placeId);
 
         return true;
     }
@@ -236,6 +359,7 @@
     }, 250);
 
     window.Korone2017Game = {
-        rebuildGamePage
+        rebuildGamePage,
+        loadRecommendedGames
     };
 })();
