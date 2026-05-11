@@ -1048,7 +1048,7 @@ a:hover .icon-dislike {
 }
 
 .page-content .rbx-tabs-horizontal .rbx-tab {
-	width: 25%;
+	width: 33.33%;
 }
 
 @media(max-width:543px) {
@@ -1140,8 +1140,9 @@ a:hover .icon-dislike {
 	width: calc(100% - 640px);
 	position: relative;
 	float: right;
-	height: 100%;
+	height: 90%;
 	padding: 0 12px 0 24px;
+	text-align: left;
 }
 
 .game-main-content .game-calls-to-action .game-title-container {
@@ -1244,6 +1245,7 @@ a:hover .icon-dislike {
 	word-break: break-word;
 	overflow: hidden;
 	padding-bottom: 12px;
+	text-align: left;
 }
 
 .game-access-restrictions {
@@ -1284,7 +1286,7 @@ a:hover .icon-dislike {
 }
 
 .game-stats-container .game-stat {
-	width: 16.66667%;
+	width: 14.28%;
 	float: left;
 	text-align: center;
 }
@@ -1944,14 +1946,14 @@ a:hover .icon-dislike {
 
 	.inline-social .favorite-button-container {
 		position: absolute;
-		bottom: 46px;
+		bottom: 15px;
 		width: 40%;
 	}
 
 	.inline-social .voting-panel {
 		position: absolute;
 		right: 12px;
-		bottom: 46px;
+		bottom: 15px;
 		float: right;
 		width: 50%;
 	}
