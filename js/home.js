@@ -36,7 +36,7 @@
 
             try {
                 const json = await apiJson(
-                    "/apisite/thumbnails/v1/users/avatar?userIds=" +
+                    "/apisite/thumbnails/v1/users/headshot?userIds=" +
                     encodeURIComponent(chunk.join(",")) +
                     "&size=420x420&format=png"
                 );
