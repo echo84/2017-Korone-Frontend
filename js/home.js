@@ -194,35 +194,27 @@
         if (spinner) spinner.remove();
     }
 
-    async function loadFavorites(userId) {
+    async function loadFavorites() {
         const container = document.getElementById("my-favorites-games-content");
         const spinner = document.getElementById("my-favorites-games-content-spinner");
 
         if (!container) return console.warn("missing favorites container");
 
         const data = await apiJson(
-            "/users/profile/robloxcollections-json?userId=" + encodeURIComponent(userId)
+            "/apisite/games/v1/games/list?sortToken=Favorited&maxRows=6&genre=0&keyword="
         );
 
         const games =
-            data.Collections ||
-            data.collections ||
-            data.data ||
+            data.games ||
+            (data.data && data.data.games) ||
+            data.GameData ||
             data.Items ||
             [];
 
-        const places = games
-            .filter(item => {
-                const type =
-                    item.AssetTypeId ||
-                    item.assetTypeId ||
-                    item.typeId;
+        const placeIds = games.map(g => g.placeId || g.rootPlaceId || (g.rootPlace && g.rootPlace.id));
+        const thumbs = await getGameIcons(placeIds);
 
-                return type === 9 || type === "Place" || item.placeId;
-            })
-            .slice(0, 6);
-
-        if (!places.length) {
+        if (!games.length) {
             container.innerHTML = '<div class="empty-row">No favorites loaded.</div>';
             if (spinner) spinner.remove();
             return;
@@ -230,21 +222,25 @@
 
         container.innerHTML =
             '<ul class="hlist game-cards">' +
-            places.map(function (game, index) {
-                const placeId =
-                    game.AssetId ||
-                    game.assetId ||
-                    game.placeId ||
-                    game.id ||
-                    0;
+            games.map(function (game, index) {
+                const placeId = game.placeId || game.rootPlaceId || (game.rootPlace && game.rootPlace.id) || 0;
 
-                const name = esc(game.Name || game.name || "Unknown Game");
+                const name = esc(game.name || "Unknown Game");
+                const creator = esc(game.creatorName || (game.creator && game.creator.name) || "Unknown");
+                const creatorId = game.creatorId || (game.creator && game.creator.id) || 0;
+
+                const players = game.playerCount || 0;
+                const upvotes = game.totalUpVotes || game.likes || 0;
+                const downvotes = game.totalDownVotes || game.dislikes || 0;
+
+                const totalVotes = upvotes + downvotes;
+                const votePercent = totalVotes > 0 ? Math.round((upvotes / totalVotes) * 100) : 0;
 
                 const thumb =
-                    game.ThumbnailUrl ||
-                    game.thumbnailUrl ||
-                    game.imageUrl ||
+                    thumbs[String(placeId)] ||
                     game.iconUrl ||
+                    game.imageUrl ||
+                    game.thumbnailUrl ||
                     "/img/placeholder/icon_one.png";
 
                 return `
@@ -256,8 +252,40 @@
                 </div>
 
                 <div class="text-overflow game-card-name" title="${name}" ng-non-bindable="">${name}</div>
-                <div class="game-card-name-secondary"></div>
+                <div class="game-card-name-secondary">${players.toLocaleString()} Playing</div>
+
+                <div class="game-card-vote">
+                    <div class="vote-bar" data-voting-processed="false">
+                        <div class="vote-thumbs-up"><span class="icon-like-gray-16x16"></span></div>
+
+                        <div class="vote-container" data-upvotes="${upvotes}" data-downvotes="${downvotes}">
+                            <div class="vote-background"></div>
+                            <div class="vote-percentage" style="width:${votePercent}%"></div>
+                            <div class="vote-mask">
+                                <div class="segment seg-1"></div>
+                                <div class="segment seg-2"></div>
+                                <div class="segment seg-3"></div>
+                                <div class="segment seg-4"></div>
+                            </div>
+                        </div>
+
+                        <div class="vote-thumbs-down"><span class="icon-dislike-gray-16x16"></span></div>
+                    </div>
+
+                    <div class="vote-counts">
+                        <div class="vote-down-count">${downvotes.toLocaleString()}</div>
+                        <div class="vote-up-count">${upvotes.toLocaleString()}</div>
+                    </div>
+                </div>
             </a>
+
+            <div class="game-card-footer">
+                <div class="creator">
+                    <span class="text-label xsmall text-overflow">
+                        By <a class="text-link" href="/users/${creatorId}/profile" ng-non-bindable="">${creator}</a>
+                    </span>
+                </div>
+            </div>
         </div>
     </li>`;
             }).join("") +
