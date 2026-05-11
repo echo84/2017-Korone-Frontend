@@ -462,6 +462,7 @@
 
     window.Korone2017Home = {
         rebuildHome,
-        loadRecentlyPlayed
+        loadRecentlyPlayed,
+        loadFavorites
     };
 })();
