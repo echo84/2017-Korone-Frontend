@@ -194,6 +194,78 @@
         if (spinner) spinner.remove();
     }
 
+    async function loadFavorites(userId) {
+        const container = document.getElementById("my-favorites-games-content");
+        const spinner = document.getElementById("my-favorites-games-content-spinner");
+
+        if (!container) return console.warn("missing favorites container");
+
+        const data = await apiJson(
+            "/users/profile/robloxcollections-json?userId=" + encodeURIComponent(userId)
+        );
+
+        const games =
+            data.Collections ||
+            data.collections ||
+            data.data ||
+            data.Items ||
+            [];
+
+        const places = games
+            .filter(item => {
+                const type =
+                    item.AssetTypeId ||
+                    item.assetTypeId ||
+                    item.typeId;
+
+                return type === 9 || type === "Place" || item.placeId;
+            })
+            .slice(0, 6);
+
+        if (!places.length) {
+            container.innerHTML = '<div class="empty-row">No favorites loaded.</div>';
+            if (spinner) spinner.remove();
+            return;
+        }
+
+        container.innerHTML =
+            '<ul class="hlist game-cards">' +
+            places.map(function (game, index) {
+                const placeId =
+                    game.AssetId ||
+                    game.assetId ||
+                    game.placeId ||
+                    game.id ||
+                    0;
+
+                const name = esc(game.Name || game.name || "Unknown Game");
+
+                const thumb =
+                    game.ThumbnailUrl ||
+                    game.thumbnailUrl ||
+                    game.imageUrl ||
+                    game.iconUrl ||
+                    "/img/placeholder/icon_one.png";
+
+                return `
+    <li class="list-item game-card">
+        <div class="game-card-container">
+            <a href="/games/refer?SortFilter=Favorited&PlaceId=${placeId}&Position=${index + 1}&PageType=Home" class="game-card-link">
+                <div class="game-card-thumb-container">
+                    <img class="game-card-thumb" src="${esc(thumb)}" alt="${name}" thumbnail="" image-retry="">
+                </div>
+
+                <div class="text-overflow game-card-name" title="${name}" ng-non-bindable="">${name}</div>
+                <div class="game-card-name-secondary"></div>
+            </a>
+        </div>
+    </li>`;
+            }).join("") +
+            "</ul>";
+
+        if (spinner) spinner.remove();
+    }
+
     async function rebuildHome() {
         const oldHome = qs('[class*="homeContainer-"]');
         if (!oldHome || document.getElementById("HomeContainer")) return false;
@@ -289,12 +361,17 @@
                     '</div>' +
                 '</div>' +
 
-                '<div class="col-xs-12 container-list home-games">' +
-                    '<div class="container-header">' +
+                '<div id="my-favorites-games" class="col-xs-12 container-list home-games">' +
+                    '<div id="my-favorites-games-header" class="container-header">' +
                         '<h3>My Favorites</h3>' +
                         '<a href="/users/' + esc(userId) + '/favorites#!/places" class="btn-secondary-xs btn-more btn-fixed-width">See All</a>' +
                     '</div>' +
-                    '<div class="game-card-list empty-row">No favorites loaded.</div>' +
+                    '<div id="my-favorites-games-list" class="game-card-list">' +
+                        '<div id="my-favorites-games-content-spinner" class="loading-animated game-card-list-spinner">' +
+                            '<div><div></div><div></div><div></div></div>' +
+                        '</div>' +
+                        '<div id="my-favorites-games-content"></div>' +
+                    '</div>' +
                 '</div>' +
 
                 '<div class="col-xs-12 col-sm-6 home-right-col">' +
@@ -348,6 +425,7 @@
 
             rebuildHome().then(function () {
                 loadRecentlyPlayed();
+                loadFavorites(userId);
             });
         }
 
