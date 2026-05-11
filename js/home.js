@@ -36,7 +36,7 @@
 
             try {
                 const json = await apiJson(
-                    "/apisite/thumbnails/v1/users/headshot?userIds=" +
+                    "/apisite/thumbnails/v1/users/avatar?userIds=" +
                     encodeURIComponent(chunk.join(",")) +
                     "&size=420x420&format=png"
                 );
@@ -48,6 +48,21 @@
         }
 
         return out;
+    }
+
+    async function getHeadshot(userId) {
+        try {
+            const json = await apiJson(
+                "/apisite/thumbnails/v1/users/headshot?userIds=" +
+                encodeURIComponent(userId) +
+                "&size=420x420&format=png"
+            );
+
+            const item = (json.data || [])[0];
+            return item ? item.imageUrl : "/img/error.png";
+        } catch (e) {
+            return "/img/error.png";
+        }
     }
 
     async function getGameIcons(placeIds) {
@@ -213,7 +228,7 @@
         });
 
         const thumbs = await getAvatarThumbs([userId].concat(friends.map(f => f.id)));
-        const avatarUrl = thumbs[userId] || "/img/error.png";
+        const avatarUrl = await getHeadshot(userId);
 
         const friendHtml = friends.map(f => {
             const img = thumbs[f.id] || f.fallbackImg || "/img/error.png";
