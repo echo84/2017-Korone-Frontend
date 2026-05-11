@@ -75,6 +75,7 @@
         const comments = qs('[class*="commentsContainer-"]', old);
 
         const page = document.createElement("div");
+        page.id = "korone-2017-game-page";
         page.className = "content";
 
         page.innerHTML = `
@@ -209,14 +210,29 @@
     }
 
     let tries = 0;
+
     const timer = setInterval(function () {
         tries++;
 
-        if (rebuildGamePage()) {
+        const old = qs('[class*="gameContainer-"]');
+        if (!old) return false;
+
+        if (document.getElementById("korone-2017-game-page")) return false;
+
+        const hasTitle = old && qs('[class*="gameName-"]', old);
+        const hasDescription = old && qs('[class*="descriptionText-"]', old);
+        const hasStats = old && old.querySelectorAll('[class*="gameStat-"]').length >= 3;
+        const hasThumb = old && qs('[class*="carouselItem-"] img, [class*="thumbContainer-"] img', old);
+
+        if (old && hasTitle && hasDescription && hasStats && hasThumb) {
             clearInterval(timer);
+            rebuildGamePage();
         }
 
-        if (tries > 80) clearInterval(timer);
+        if (tries > 120) {
+            clearInterval(timer);
+            console.warn("game page rebuild timed out");
+        }
     }, 250);
 
     window.Korone2017Game = {
