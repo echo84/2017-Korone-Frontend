@@ -317,8 +317,8 @@
                                             </div>
                                         </div>
                                         <div class="vote-numbers">
-                                            <span id="vote-up-text" class="vote-text">0</span></div>
-                                            <span id="vote-down-text" class="vote-text">0</span></div>
+                                            <span id="vote-up-text" class="vote-text">1,984</span>
+                                            <span id="vote-down-text" class="vote-text">157</span>
                                         </div>
                                     </div>
                                     <div class="downvote"><span class="icon-dislike"></span></div>
