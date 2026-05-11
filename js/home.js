@@ -237,7 +237,7 @@
         }).join("");
 
         const page = document.createElement("div");
-        page.className = "k17-content";
+        page.className = "content k17-content";
 
         page.innerHTML =
             '<div id="HomeContainer" class="row home-container">' +
